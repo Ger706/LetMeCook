@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class Ingredient
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $table      = 'ingredients';
+    protected $primaryKey = 'ingredient_id';
+    protected $fillable = [
+        'ingredient_name',
+        'ingredient_image',
+        'amount_per_unit',
+        'unit'
+    ];
+
+}

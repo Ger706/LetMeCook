@@ -4,19 +4,59 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Mockery\Exception;
 
 class UserController extends ResponseController
 {
     public function createUser(Request $req){
         try {
-//            $user = new User();
-//            $user->fill($req->all());
-//            $user->save();
+            $data = $req->all();
+            $userExist = User::where('email',$data['email'])->first();
+            if ($userExist){
+                return $this->sendError('Email Already Exist');
+            }
+            $data['password'] = hash('sha256', $data['password']);
+            $user = new User();
+            $user->fill($data);
+            $user->save();
 
         } catch (Exception $e) {
-            throw $e;
+            return $this->sendError('Failed to Create User');
         }
         return $this->sendSuccess('User created');
+    }
+
+    public function getUser($userId) {
+        try {
+            $user = User::find($userId);
+            if (!$user) {
+                return $this->sendError("User not found");
+            }
+            $results = $user;
+
+        } catch (Exception $e) {
+            return $this->sendError('Failed to get user');
+        }
+
+        return $this->sendResponseData($results);
+    }
+
+    public function login(Request $req) {
+        try {
+            $data = $req->all();
+            $user = User::where('email',$data['email'])->first();
+            if (!$user){
+                return $this->sendError('Email is not registered');
+            }
+            $hashedValue = hash('sha256', $data['password']);
+            if ($hashedValue !== $user->password){
+                return $this->sendError('Wrong Password');
+            }
+
+        } catch (Exception $e) {
+            return $this->sendError('Failed to Login');
+        }
+        return $this->sendResponseData($user);
     }
 }
