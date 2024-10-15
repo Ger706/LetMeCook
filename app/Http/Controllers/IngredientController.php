@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ingredient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Mockery\Exception;
-use function Symfony\Component\Translation\t;
 
 class IngredientController extends ResponseController
 {
