@@ -15,6 +15,7 @@ class IngredientController extends ResponseController
                 ->join('ingredient_category', 'ingredients.ingredient_id', '=', 'ingredient_category.ingredient_id')
                 ->join('categories', 'ingredient_category.category_id', '=', 'categories.category_id')
                 ->select(
+                    'ingredients.ingredient_id',
                     'ingredients.ingredient_name',
                     DB::raw('CONCAT(ingredients.amount_per_unit, " ", ingredients.unit) AS amount_per_unit'),
                     'categories.category_name',
