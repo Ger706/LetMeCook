@@ -20,6 +20,7 @@ Route::prefix('ingredient')->group(function () {
 
 Route::prefix('recipe')->group(function () {
     Route::post('/create', [RecipeController::class, 'createRecipe']);
+    Route::post('/all', [RecipeController::class, 'getRecipeList']);
     Route::get('/{recipeId}', [RecipeController::class, 'getRecipeDetail']);
     Route::post('/by-ingredient', [RecipeController::class, 'getRecipesByIngredient']);
     Route::get('/by-user/{userId}', [RecipeController::class, 'getRecipesByUser']);

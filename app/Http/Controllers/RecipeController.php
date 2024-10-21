@@ -34,10 +34,35 @@ class RecipeController extends ResponseController
         }
         return $result;
     }
+    public function getRecipeList(Request $request) {
+        try {
+            $data = $request->all();
+            $result = Recipe::whereNull('deleted_at');
+            if (isset($data['search'])) {
+                $result = $result->where('recipe_name', 'like', '%' . $data['search'] . '%');
+            }
+            if (isset($data['orderBy']) && isset($data['order'])) {
+                $result = $result->orderBy($data['orderBy'], $data['order']);
+            }
+            if (isset($data['limit']) && isset($data['offset'])) {
+                $result = $result->skip($data['offset'])->take($data['limit']);
+            }
+            $result = $result->get();
+            if ($result->isEmpty()) {
+                return $this->sendError('Recipe not found');
+            }
+            foreach ($result as $key => $recipe) {
+                $result[$key] = $this->encodeDecodeAttribute($recipe, 'decode');
+            }
+        } catch (Exception $e) {
+            return $this->sendError('Failed to get recipe');
+        }
+        return $this->sendResponseData($result);
+    }
 
     public function getRecipesByIngredient(Request $req) {
         try {
-            $data = request()->all();
+            $data = $req->all();
             $recipes = Recipe::whereRaw('json_length(ingredient_list) > 3')
                 ->whereNull('deleted_at')->get();
             $ingredientList = Ingredient::whereIn('ingredient_id', $data['ingredient_list'])
