@@ -59,4 +59,18 @@ class UserController extends ResponseController
         }
         return $this->sendResponseData($user);
     }
+    public function editUserInfo(Request $req) {
+        try {
+            $data = $req->all();
+            $user = User::find($data['user_id']);
+            if (!$user){
+                return $this->sendError("User not found");
+            }
+            $user->fill($data);
+            $user->save();
+        } catch (Exception $e) {
+            return $this->sendError('Failed to Edit User');
+        }
+        return $this->sendResponseData($user);
+    }
 }

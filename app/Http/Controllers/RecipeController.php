@@ -2,13 +2,44 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FavoriteRecipe;
 use App\Models\Ingredient;
 use App\Models\Recipe;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Mockery\Exception;
 
 class RecipeController extends ResponseController
 {
+    public function encodeDecodeAttribute($data, $mode) {
+        try {
+            if ($mode === 'decode') {
+                if (isset($data['ingredient_list'])) {
+                    $data['ingredient_list'] = json_decode($data['ingredient_list']);
+                }
+                if (isset($data['nutrition_info'])) {
+                    $data['nutrition_info'] = json_decode($data['nutrition_info']);
+                }
+                if(isset($data['recipe_step'])) {
+                    $data['recipe_step'] = json_decode($data['recipe_step']);
+                }
+            } else {
+                if (isset($data['ingredient_list'])) {
+                    $data['ingredient_list'] = json_encode($data['ingredient_list']);
+                }
+                if (isset($data['nutrition_info'])) {
+                    $data['nutrition_info'] = json_encode($data['nutrition_info']);
+                }
+                if (isset($data['recipe_step'])) {
+                    $data['recipe_step'] = json_encode($data['recipe_step']);
+                }
+            }
+        } catch (Exception $e) {
+            throw $e;
+        }
+        return $data;
+    }
+
     public function createRecipe() {
         try {
             $req = request()->all();
@@ -103,32 +134,69 @@ class RecipeController extends ResponseController
         return $this->sendResponseData($result);
     }
 
-    public function encodeDecodeAttribute($data, $mode) {
+    public function getUserFavoriteRecipes($userId) {
         try {
-            if ($mode === 'decode') {
-                if (isset($data['ingredient_list'])) {
-                    $data['ingredient_list'] = json_decode($data['ingredient_list']);
-                }
-                if (isset($data['nutrition_info'])) {
-                    $data['nutrition_info'] = json_decode($data['nutrition_info']);
-                }
-                if(isset($data['recipe_step'])) {
-                    $data['recipe_step'] = json_decode($data['recipe_step']);
-                }
+            $result = DB::table('favorite_recipes')
+                ->join('users',static function ($clause) use ($userId) {
+                    $clause->on('users.user_id', '=', 'favorite_recipes.user_id');
+                   $clause->where('users.user_id','=', $userId);
+                   $clause->whereNull('deleted_at');
+                })
+                ->join('recipes', static function ($clause) {
+                    $clause->on('recipes.recipe_id', '=', 'favorite_recipes.recipe_id');
+                    $clause->whereNull('deleted_at');
+                })->get();
+
+            if (!$result->isEmpty()) {
+               foreach ($result as $key => $recipe) {
+                   $result[$key] = $this->encodeDecodeAttribute($recipe, 'decode');
+               }
             } else {
-                if (isset($data['ingredient_list'])) {
-                    $data['ingredient_list'] = json_encode($data['ingredient_list']);
-                }
-                if (isset($data['nutrition_info'])) {
-                    $data['nutrition_info'] = json_encode($data['nutrition_info']);
-                }
-                if (isset($data['recipe_step'])) {
-                    $data['recipe_step'] = json_encode($data['recipe_step']);
-                }
+                return $this->sendError('No Favorite Recipes Found');
             }
         } catch (Exception $e) {
-            throw $e;
+            return $this->sendError('Failed to get recipe list');
         }
-        return $data;
+        return $this->sendResponseData($result);
+    }
+
+    public function setRecipeAsFavorite(Request $req) {
+        try {
+            $data = $req->all();
+
+            if (!isset($data['recipe_id']) || !isset($data['user_id'])) {
+                return $this->sendError('Failed to add recipe as favorite');
+            }
+            $recipe = Recipe::where('recipe_id', $data['recipe_id'])
+            ->whereNull('deleted_at')
+            ->first();
+
+            if (!$recipe) {
+                return $this->sendError('Recipe does not exist');
+            }
+            $favRecipe = new FavoriteRecipe();
+            $favRecipe->fill($data);
+            $favRecipe->save();
+        } catch (Exception $e) {
+            return $this->sendError('Failed to add recipe as favorite');
+        }
+        return $this->sendSuccess('Recipe successfully added as favorite');
+    }
+
+    public function deleteFavoriteRecipes($favoriteRecipeId) {
+        try {
+            if (!$favoriteRecipeId) {
+                return $this->sendError('Failed to remove recipe from favorite');
+            }
+            $favRecipe = FavoriteRecipe::find($favoriteRecipeId);
+            $favRecipe->delete();
+
+            if (!isset($data['recipe_id']) || !isset($data['user_id'])) {
+                return $this->sendError('Failed to add recipe as favorite');
+            }
+        } catch (Exception $e) {
+            return $this->sendError('Failed to remove recipe from favorite');
+        }
+        return $this->sendSuccess('Recipe successfully removed from favorite');
     }
 }

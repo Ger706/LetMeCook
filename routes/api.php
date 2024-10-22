@@ -24,4 +24,10 @@ Route::prefix('recipe')->group(function () {
     Route::get('/{recipeId}', [RecipeController::class, 'getRecipeDetail']);
     Route::post('/by-ingredient', [RecipeController::class, 'getRecipesByIngredient']);
     Route::get('/by-user/{userId}', [RecipeController::class, 'getRecipesByUser']);
+
+    Route::group(['prefix' => 'favorite'], function () {
+        Route::post('/add', [RecipeController::class, 'setRecipeAsFavorite']);
+        Route::post('/remove/{favoriteRecipeId}', [RecipeController::class, 'deleteFavoriteRecipes']);
+        Route::get('/{userId}', [RecipeController::class, 'getUserFavoriteRecipes']);
+    });
 });
