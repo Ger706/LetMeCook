@@ -9,7 +9,7 @@ class ResponseController extends Controller
     public function sendSuccess($message){
         $response = [
             'error' => 0,
-            'message' => $message . " SuccessFully Done",
+            'message' => $message,
         ];
         return response()->json($response);
     }

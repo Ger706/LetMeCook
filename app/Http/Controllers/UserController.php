@@ -24,7 +24,7 @@ class UserController extends ResponseController
         } catch (Exception $e) {
             return $this->sendError('Failed to Create User');
         }
-        return $this->sendSuccess('User created');
+        return $this->sendSuccess('User created Successfully');
     }
 
     public function getUser($userId) {

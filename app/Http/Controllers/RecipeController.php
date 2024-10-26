@@ -140,16 +140,22 @@ class RecipeController extends ResponseController
                 ->join('users',static function ($clause) use ($userId) {
                     $clause->on('users.user_id', '=', 'favorite_recipes.user_id');
                    $clause->where('users.user_id','=', $userId);
-                   $clause->whereNull('deleted_at');
+                   $clause->whereNull('users.deleted_at');
                 })
                 ->join('recipes', static function ($clause) {
                     $clause->on('recipes.recipe_id', '=', 'favorite_recipes.recipe_id');
-                    $clause->whereNull('deleted_at');
-                })->get();
+                    $clause->whereNull('recipes.deleted_at');
+                })->
+                select(
+                    'recipes.recipe_id',
+                    'recipes.recipe_name',
+                    'recipes.recipe_image'
+                )->get()->toArray();
 
-            if (!$result->isEmpty()) {
+            if ($result) {
                foreach ($result as $key => $recipe) {
-                   $result[$key] = $this->encodeDecodeAttribute($recipe, 'decode');
+                   $recipeArray = json_decode(json_encode($recipe), true);
+                   $result[$key] = $this->encodeDecodeAttribute($recipeArray, 'decode');
                }
             } else {
                 return $this->sendError('No Favorite Recipes Found');
