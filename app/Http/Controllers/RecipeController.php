@@ -39,10 +39,33 @@ class RecipeController extends ResponseController
         }
         return $data;
     }
+    public function calculateCalories($data): float
+    {
+        $totalCal = 0.0;
+        foreach ($data as $nutrition) {
+            if($nutrition['category_id'] === 7) {
+                $totalCal += $nutrition['amount'] * 4;
+            } else if ($nutrition['category_id'] === 8) {
+                $totalCal += $nutrition['amount'] * 4;
+            } else if ($nutrition['category_id'] === 10) {
+                $totalCal += $nutrition['amount'] * 9;
+            }
+        }
+        return $totalCal;
+    }
 
     public function createRecipe() {
         try {
             $req = request()->all();
+            $calculateCalories = [];
+            foreach ($req['nutrition_info'] as $item) {
+                if (in_array($item['category_id'], [7, 8, 10])) {
+                 $calculateCalories[] = $item;
+                }
+            }
+            if (!empty($calculateCalories)) {
+                $req['calories'] = $this->calculateCalories($calculateCalories);
+            }
             $data = $this->encodeDecodeAttribute($req, 'encode');
             $recipe = new Recipe();
             $recipe->fill($data);
@@ -53,9 +76,15 @@ class RecipeController extends ResponseController
         return $this->sendSuccess('Recipe successfully created');
     }
 
-    public function getRecipeDetail($recipeId) {
+    public function getRecipeDetail(Request $req) {
         try {
-            $result = Recipe::find($recipeId);
+            $data = $req->all();
+            $result = Recipe::find($data['recipe_id']);
+
+            if($result->user_id !== $data['user_id']) {
+                $result->total_view += 1;
+                $result->save();
+            }
             if (!$result) {
                 return $this->sendError('Recipe not found');
             }
@@ -204,5 +233,43 @@ class RecipeController extends ResponseController
             return $this->sendError('Failed to remove recipe from favorite');
         }
         return $this->sendSuccess('Recipe successfully removed from favorite');
+    }
+
+    public function getPopularRecipes() {
+        try {
+            $recipes = Recipe::whereNull('deleted_at')
+                ->select('recipes.recipe_name', 'recipes.recipe_image', 'recipes.recipe_id', 'recipes.calories')
+                ->orderBy('total_view', 'desc')
+                ->take(4)
+                ->get()
+                ->toArray();
+            if (!$recipes) {
+                return $this->sendError('Recipes List Not Found');
+            }
+        } catch (Exception $e) {
+            return $this->sendError('Failed to get recipes list');
+        }
+        return $this->sendResponseData($recipes);
+    }
+
+    public function getRecommendedRecipes() {
+        try {
+            $results = DB::table('recipes')
+                ->select('recipes.recipe_name', 'recipes.recipe_image', 'recipes.recipe_id', 'recipes.calories', DB::raw('COUNT(favorite_recipes.recipe_id) as amount'))
+                ->join('favorite_recipes', 'recipes.recipe_id', '=', 'favorite_recipes.recipe_id')
+                ->whereNull('favorite_recipes.deleted_at')
+                ->whereNull('recipes.deleted_at')
+                ->groupBy('recipes.recipe_id', 'recipes.recipe_name', 'recipes.recipe_image', 'recipes.calories')
+                ->orderBy('amount', 'desc')
+                ->limit(4)
+                ->get()
+                ->toArray();
+            if (!$results) {
+                return $this->sendError('Recipes List Not Found');
+            }
+        } catch (Exception $e) {
+            return $this->sendError('Failed to get recipes list');
+        }
+        return $this->sendResponseData($results);
     }
 }

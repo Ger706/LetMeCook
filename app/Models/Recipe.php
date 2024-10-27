@@ -25,7 +25,9 @@ class Recipe extends Model
         'recipe_step',
         'recipe_image',
         'nutrition_info',
-        'user_id'
+        'calories',
+        'user_id',
+        'total_view'
     ];
 
 }

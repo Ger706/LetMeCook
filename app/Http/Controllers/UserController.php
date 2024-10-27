@@ -73,4 +73,18 @@ class UserController extends ResponseController
         }
         return $this->sendResponseData($user);
     }
+
+    public function setUserAsPremium($userId) {
+        try {
+            $user = User::find($userId);
+            if (!$user){
+                return $this->sendError("User not found");
+            }
+            $user->premium = true;
+            $user->save();
+        } catch (Exception $e) {
+            return $this->sendError('Failed to set premium user');
+        }
+        return $this->sendResponseData($user);
+    }
 }
