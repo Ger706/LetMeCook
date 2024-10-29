@@ -20,12 +20,12 @@ class ForumCommentController extends ResponseController
                 DB::RAW('COUNT(forum_comment.likes) as like_amount'),
                 'forum_comment.comment',
                 'forum_comment.user_id',
-                'users.name')
+                'users.username')
                 ->groupBy('forum_comment.forum_comment_id',
                 'forum_comment.likes',
                 'forum_comment.comment',
                 'forum_comment.user_id',
-                'users.name')
+                'users.username')
                 ->where('forum_comment.recipe_id', '=', $data['recipe_id'])->get()->toArray();
 
             if (!$result) {

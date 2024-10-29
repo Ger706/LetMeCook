@@ -24,10 +24,12 @@ class Recipe extends Model
         'ingredient_list',
         'recipe_step',
         'recipe_image',
+        'recipe_description',
         'nutrition_info',
         'calories',
         'user_id',
-        'total_view'
+        'total_view',
+        'cook_time'
     ];
 
 }

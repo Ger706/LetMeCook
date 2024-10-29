@@ -3,7 +3,6 @@
 use App\Http\Controllers\ExpertController;
 use App\Http\Controllers\IngredientController;
 use App\Http\Controllers\RecipeController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ForumCommentController;
@@ -11,7 +10,7 @@ use App\Http\Controllers\ForumCommentController;
 
 
 Route::prefix('user')->group(function () {
-    Route::post('/create', [UserController::class, 'createUser']);
+    Route::post('/register', [UserController::class, 'createUser']);
     Route::get('/{userId}', [UserController::class, 'getUser']);
     Route::post('/login', [UserController::class, 'login']);
     Route::post('/set-premium/{userId}', [UserController::class, 'setUserAsPremium']);
@@ -19,6 +18,7 @@ Route::prefix('user')->group(function () {
 
 Route::prefix('ingredient')->group(function () {
     Route::post('/list', [IngredientController::class, 'getIngredientList']);
+    Route::post('/category-list', [IngredientController::class, 'getIngredientCategoryList']);
 });
 
 Route::prefix('recipe')->group(function () {

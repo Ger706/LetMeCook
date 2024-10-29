@@ -7,6 +7,7 @@ use App\Models\Ingredient;
 use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Mockery\Exception;
 
 class RecipeController extends ResponseController
@@ -54,9 +55,14 @@ class RecipeController extends ResponseController
         return $totalCal;
     }
 
-    public function createRecipe() {
+    public function createRecipe(Request $request) {
         try {
-            $req = request()->all();
+            $req = $request->all();
+            $path = $request->file('recipe_image')->store('images', 'public');
+
+            $req['nutrition_info'] = json_decode($req['nutrition_info'], true);
+            $req['recipe_step'] = json_decode($req['recipe_step'], true);
+            $req['ingredient_list'] = json_decode($req['ingredient_list'], true);
             $calculateCalories = [];
             foreach ($req['nutrition_info'] as $item) {
                 if (in_array($item['category_id'], [7, 8, 10])) {
@@ -67,6 +73,7 @@ class RecipeController extends ResponseController
                 $req['calories'] = $this->calculateCalories($calculateCalories);
             }
             $data = $this->encodeDecodeAttribute($req, 'encode');
+            $data['recipe_image'] = Storage::disk('images')->url($path);
             $recipe = new Recipe();
             $recipe->fill($data);
             $recipe->save();
@@ -88,6 +95,7 @@ class RecipeController extends ResponseController
             if (!$result) {
                 return $this->sendError('Recipe not found');
             }
+            $result->recipe_image = Storage::url($result->recipe_image);
             $result = $this->encodeDecodeAttribute($result, 'decode');
         } catch (Exception $e) {
             return $this->sendError('Failed to get recipe');
@@ -114,6 +122,18 @@ class RecipeController extends ResponseController
             foreach ($result as $key => $recipe) {
                 $result[$key] = $this->encodeDecodeAttribute($recipe, 'decode');
             }
+           if (isset($data['category_id'])) {
+            $recipeFiltered = [];
+                foreach ($result as $key => $recipe) {
+                    foreach ($recipe->nutrition_info as $nutrition) {
+                        if ($nutrition->category_id === $data['category_id']) {
+                            $recipeFiltered[] = $recipe;
+                            break;
+                        }
+                    }
+                }
+                $result = $recipeFiltered;
+           }
         } catch (Exception $e) {
             return $this->sendError('Failed to get recipe');
         }
@@ -238,7 +258,12 @@ class RecipeController extends ResponseController
     public function getPopularRecipes() {
         try {
             $recipes = Recipe::whereNull('deleted_at')
-                ->select('recipes.recipe_name', 'recipes.recipe_image', 'recipes.recipe_id', 'recipes.calories')
+                ->select('recipes.recipe_name',
+                    'recipes.recipe_image',
+                    'recipes.recipe_id',
+                    'recipes.calories',
+                    'recipes.recipe_description',
+                    'recipes.cook_time')
                 ->orderBy('total_view', 'desc')
                 ->take(4)
                 ->get()
@@ -255,11 +280,18 @@ class RecipeController extends ResponseController
     public function getRecommendedRecipes() {
         try {
             $results = DB::table('recipes')
-                ->select('recipes.recipe_name', 'recipes.recipe_image', 'recipes.recipe_id', 'recipes.calories', DB::raw('COUNT(favorite_recipes.recipe_id) as amount'))
+                ->select('recipes.recipe_name',
+                    'recipes.recipe_image',
+                    'recipes.recipe_id',
+                    'recipes.calories',
+                    'recipes.recipe_description',
+                    'recipes.cook_time',
+                    DB::raw('COUNT(favorite_recipes.recipe_id) as amount'))
                 ->join('favorite_recipes', 'recipes.recipe_id', '=', 'favorite_recipes.recipe_id')
                 ->whereNull('favorite_recipes.deleted_at')
                 ->whereNull('recipes.deleted_at')
-                ->groupBy('recipes.recipe_id', 'recipes.recipe_name', 'recipes.recipe_image', 'recipes.calories')
+                ->groupBy('recipes.recipe_id', 'recipes.recipe_name', 'recipes.recipe_image', 'recipes.calories','recipes.recipe_description',
+                    'recipes.cook_time')
                 ->orderBy('amount', 'desc')
                 ->limit(4)
                 ->get()

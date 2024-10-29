@@ -12,9 +12,13 @@ class UserController extends ResponseController
     public function createUser(Request $req){
         try {
             $data = $req->all();
-            $userExist = User::where('email',$data['email'])->first();
-            if ($userExist){
+            $usernameExist = User::where('username', $data['username'])->first();
+            $emailExist = User::where('email',$data['email'])->first();
+            if ($emailExist){
                 return $this->sendError('Email Already Exist');
+            }
+            if ($usernameExist) {
+                return $this->sendError('Username Already Exist');
             }
             $data['password'] = hash('sha256', $data['password']);
             $user = new User();
@@ -45,10 +49,11 @@ class UserController extends ResponseController
     public function login(Request $req) {
         try {
             $data = $req->all();
-            $user = User::where('email',$data['email'])->first();
+            $user = User::where('username',$data['username'])->first();
             if (!$user){
-                return $this->sendError('Email is not registered');
+                return $this->sendError('Account not found');
             }
+
             $hashedValue = hash('sha256', $data['password']);
             if ($hashedValue !== $user->password){
                 return $this->sendError('Wrong Password');

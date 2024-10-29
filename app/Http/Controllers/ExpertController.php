@@ -12,6 +12,7 @@ class ExpertController extends ResponseController
         try {
             $data = $request->all();
             $expert = new Expert();
+            $data['specialization'] = json_encode($data['specialization']);
             $expert->fill($data);
             $expert->save();
 
@@ -42,6 +43,7 @@ class ExpertController extends ResponseController
             if (!$result) {
                 return $this->sendError('Expert not found');
             }
+            $result['specialization'] = json_decode($result['specialization']);
         } catch (Exception $e) {
             return $this->sendError('Failed to get Expert');
         }
