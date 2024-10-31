@@ -29,9 +29,9 @@ class IngredientController extends ResponseController
                 ->whereNull('ingredients.deleted_at')
                 ->whereNull('ingredient_category.deleted_at');
 
-            if (isset($data['category_id'])) {
-                $ingredients = $ingredients->where('ingredient_category.category_id', $data['category_id']);
-            }
+//            if (isset($data['category_id'])) {
+//                $ingredients = $ingredients->where('ingredient_category.category_id', $data['category_id']);
+//            }
             if (isset($data['ingredient_id'])) {
                 $ingredients = $ingredients->where('ingredients.ingredient_id', $data['ingredient_id']);
             }
@@ -39,6 +39,9 @@ class IngredientController extends ResponseController
                 $ingredients = $ingredients->orderBy($data['order_by']);
             }
             $ingredients = $ingredients->get();
+            if ($ingredients->isEmpty()) {
+                return $this->sendError('No Ingredients Available');
+            }
             $caloriesByIngredient = [];
 
             foreach ($ingredients as $ingredient) {
@@ -52,14 +55,27 @@ class IngredientController extends ResponseController
                     $caloriesByIngredient[$key] += $ingredient->calories;
                 }
             }
-
+            $filteredIngredients = null;
+            $addedIngredientIds = [];
             foreach ($ingredients as $ingredient) {
                 $key = $ingredient->ingredient_id . '_' . $ingredient->ingredient_name;
                 $ingredient->calories = $caloriesByIngredient[$key];
+
+                if (isset($data['category_id'])) {
+                    // Determine if the ingredient matches the category condition
+                    $categoryMatch = (is_array($data['category_id']) && in_array($ingredient->category_id, $data['category_id'])) ||
+                        (!is_array($data['category_id']) && $ingredient->category_id === $data['category_id']);
+
+                    // Check if the ingredient ID has already been added
+                    if ($categoryMatch && !in_array($ingredient->ingredient_id, $addedIngredientIds)) {
+                        $filteredIngredients[] = $ingredient; // Add to filtered list
+                        $addedIngredientIds[] = $ingredient->ingredient_id; // Track the added ID
+                    }
+                }
             }
-            if ($ingredients->isEmpty()) {
-                return $this->sendError('No Ingredients Available');
-            }
+
+            $ingredients = $filteredIngredients ?: $ingredients;
+
         } catch (Exception $e) {
             return $this->sendError('Error Getting Ingredients');
         }
