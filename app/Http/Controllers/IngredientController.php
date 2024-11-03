@@ -24,14 +24,12 @@ class IngredientController extends ResponseController
                     'categories.category_name',
                     DB::raw('CONCAT(ingredient_category.nutrition, " ", ingredient_category.unit) AS nutrition_per_unit'),
                     'ingredients.ingredient_image',
-                'categories.category_id',
-                'ingredients.ingredient_description')
+                    'categories.category_id',
+                    'ingredients.ingredient_description'
+                )
                 ->whereNull('ingredients.deleted_at')
                 ->whereNull('ingredient_category.deleted_at');
 
-//            if (isset($data['category_id'])) {
-//                $ingredients = $ingredients->where('ingredient_category.category_id', $data['category_id']);
-//            }
             if (isset($data['ingredient_id'])) {
                 $ingredients = $ingredients->where('ingredients.ingredient_id', $data['ingredient_id']);
             }
@@ -39,13 +37,19 @@ class IngredientController extends ResponseController
                 $ingredients = $ingredients->orderBy($data['order_by']);
             }
             $ingredients = $ingredients->get();
+
             if ($ingredients->isEmpty()) {
                 return $this->sendError('No Ingredients Available');
             }
-            $caloriesByIngredient = [];
 
+            $caloriesByIngredient = [];
+            $nutritionByIngredient = [];
+
+// Calculate calories and prepare `nutrition_contained` for each ingredient
             foreach ($ingredients as $ingredient) {
+                // Calculate calories
                 $ingredient->calories = $this->calculateCalories($ingredient);
+
                 $key = $ingredient->ingredient_id . '_' . $ingredient->ingredient_name;
 
                 // Group calories by the unique key
@@ -54,22 +58,31 @@ class IngredientController extends ResponseController
                 } else {
                     $caloriesByIngredient[$key] += $ingredient->calories;
                 }
+
+                // Group `nutrition_contained` by `ingredient_id`
+                if (!isset($nutritionByIngredient[$ingredient->ingredient_id])) {
+                    $nutritionByIngredient[$ingredient->ingredient_id] = [];
+                }
+                $nutritionByIngredient[$ingredient->ingredient_id][] = [
+                    'category_name' => $ingredient->category_name,
+                    'amount' => $ingredient->amount
+                ];
             }
-            $filteredIngredients = null;
+
+            $filteredIngredients = [];
             $addedIngredientIds = [];
             foreach ($ingredients as $ingredient) {
                 $key = $ingredient->ingredient_id . '_' . $ingredient->ingredient_name;
                 $ingredient->calories = $caloriesByIngredient[$key];
+                $ingredient->nutrition_contained = $nutritionByIngredient[$ingredient->ingredient_id] ?? [];
 
                 if (isset($data['category_id'])) {
-                    // Determine if the ingredient matches the category condition
                     $categoryMatch = (is_array($data['category_id']) && in_array($ingredient->category_id, $data['category_id'])) ||
                         (!is_array($data['category_id']) && $ingredient->category_id === $data['category_id']);
 
-                    // Check if the ingredient ID has already been added
                     if ($categoryMatch && !in_array($ingredient->ingredient_id, $addedIngredientIds)) {
-                        $filteredIngredients[] = $ingredient; // Add to filtered list
-                        $addedIngredientIds[] = $ingredient->ingredient_id; // Track the added ID
+                        $filteredIngredients[] = $ingredient;
+                        $addedIngredientIds[] = $ingredient->ingredient_id;
                     }
                 }
             }
