@@ -71,6 +71,7 @@ class IngredientController extends ResponseController
 
             $filteredIngredients = [];
             $addedIngredientIds = [];
+            $dataExist = false;
             foreach ($ingredients as $ingredient) {
                 $key = $ingredient->ingredient_id . '_' . $ingredient->ingredient_name;
                 $ingredient->calories = $caloriesByIngredient[$key];
@@ -79,14 +80,26 @@ class IngredientController extends ResponseController
                 if (isset($data['category_id'])) {
                     $categoryMatch = (is_array($data['category_id']) && in_array($ingredient->category_id, $data['category_id'])) ||
                         (!is_array($data['category_id']) && $ingredient->category_id === $data['category_id']);
-
                     if ($categoryMatch && !in_array($ingredient->ingredient_id, $addedIngredientIds)) {
                         $filteredIngredients[] = $ingredient;
                         $addedIngredientIds[] = $ingredient->ingredient_id;
                     }
+                    if (is_array($data['category_id'])) {
+                        if(in_array($ingredient->category_id, $data['category_id'])){
+                        $dataExist = true;
+                        }
+                    } else {
+                        if ($ingredient->category_id === $data['category_id'] ) {
+                            $dataExist = true;
+                        }
+                    }
+
                 }
             }
 
+            if (!$dataExist) {
+                return $this->sendError('No Ingredients Available');
+            }
             $ingredients = $filteredIngredients ?: $ingredients;
 
         } catch (Exception $e) {
