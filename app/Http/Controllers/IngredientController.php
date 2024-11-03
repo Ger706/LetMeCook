@@ -65,6 +65,7 @@ class IngredientController extends ResponseController
                 }
                 $nutritionByIngredient[$ingredient->ingredient_id][] = [
                     'category_name' => $ingredient->category_name,
+                    'category_id' => $ingredient->category_id,
                     'amount' => $ingredient->amount
                 ];
             }
