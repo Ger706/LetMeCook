@@ -32,7 +32,7 @@ Route::prefix('recipe')->group(function () {
 
     Route::group(['prefix' => 'favorite'], function () {
         Route::post('/add', [RecipeController::class, 'setRecipeAsFavorite']);
-        Route::post('/remove/{favoriteRecipeId}', [RecipeController::class, 'deleteFavoriteRecipes']);
+        Route::post('/remove', [RecipeController::class, 'deleteFavoriteRecipes']);
         Route::get('/{userId}', [RecipeController::class, 'getUserFavoriteRecipes']);
     });
 });

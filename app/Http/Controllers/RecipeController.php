@@ -106,6 +106,10 @@ class RecipeController extends ResponseController
         try {
             $data = $request->all();
             $result = Recipe::whereNull('deleted_at');
+
+            if (isset($data['user_id'])) {
+                $result = $result->where('user_id','!=',$data['user_id']);
+            }
             if (isset($data['search'])) {
                 $result = $result->where('recipe_name', 'like', '%' . $data['search'] . '%');
             }
@@ -198,7 +202,8 @@ class RecipeController extends ResponseController
                 select(
                     'recipes.recipe_id',
                     'recipes.recipe_name',
-                    'recipes.recipe_image'
+                    'recipes.recipe_image',
+                    'recipes.recipe_description'
                 )->get()->toArray();
 
             if ($result) {
@@ -225,30 +230,41 @@ class RecipeController extends ResponseController
             $recipe = Recipe::where('recipe_id', $data['recipe_id'])
             ->whereNull('deleted_at')
             ->first();
-
             if (!$recipe) {
                 return $this->sendError('Recipe does not exist');
             }
-            $favRecipe = new FavoriteRecipe();
-            $favRecipe->fill($data);
-            $favRecipe->save();
+            if ($recipe->user_id === $data['user_id']) {
+                return $this->sendError('This is your own recipe silly');
+            }
+            $favoriteRecipe = FavoriteRecipe::where('user_id','=',$data['user_id'])
+                ->where('recipe_id','=',$data['recipe_id'])
+                ->whereNull('deleted_at')->get()->toArray();
+
+            if ($favoriteRecipe) {
+                return $this->sendError('Already Added as Favorite');
+            } else {
+                $favRecipe = new FavoriteRecipe();
+                $favRecipe->fill($data);
+                $favRecipe->save();
+            }
+
         } catch (Exception $e) {
             return $this->sendError('Failed to add recipe as favorite');
         }
         return $this->sendSuccess('Recipe successfully added as favorite');
     }
 
-    public function deleteFavoriteRecipes($favoriteRecipeId) {
+    public function deleteFavoriteRecipes(Request $req) {
         try {
-            if (!$favoriteRecipeId) {
+            $data = $req->all();
+            $favoriteRecipe = FavoriteRecipe::where('user_id','=',$data['user_id'])
+                ->where('recipe_id','=',$data['recipe_id'])
+                ->whereNull('deleted_at');
+            if (!$favoriteRecipe) {
                 return $this->sendError('Failed to remove recipe from favorite');
             }
-            $favRecipe = FavoriteRecipe::find($favoriteRecipeId);
-            $favRecipe->delete();
+           $favoriteRecipe->delete();
 
-            if (!isset($data['recipe_id']) || !isset($data['user_id'])) {
-                return $this->sendError('Failed to add recipe as favorite');
-            }
         } catch (Exception $e) {
             return $this->sendError('Failed to remove recipe from favorite');
         }
