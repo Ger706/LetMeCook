@@ -95,7 +95,7 @@ class RecipeController extends ResponseController
             if (!$result) {
                 return $this->sendError('Recipe not found');
             }
-            $result->recipe_image = Storage::url($result->recipe_image);
+//            $result->recipe_image = Storage::url($result->recipe_image);
             $result = $this->encodeDecodeAttribute($result, 'decode');
         } catch (Exception $e) {
             return $this->sendError('Failed to get recipe');
