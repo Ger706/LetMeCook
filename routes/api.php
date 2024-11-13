@@ -25,6 +25,7 @@ Route::prefix('recipe')->group(function () {
     Route::post('/create', [RecipeController::class, 'createRecipe']);
     Route::post('/all', [RecipeController::class, 'getRecipeList']);
     Route::post('/detail', [RecipeController::class, 'getRecipeDetail']);
+    Route::delete('/{recipeId}', [RecipeController::class, 'deleteRecipe']);
     Route::post('/by-ingredient', [RecipeController::class, 'getRecipesByIngredient']);
     Route::get('/by-user/{userId}', [RecipeController::class, 'getRecipesByUser']);
     Route::get('/get-popular', [RecipeController::class, 'getPopularRecipes']);
@@ -38,7 +39,7 @@ Route::prefix('recipe')->group(function () {
 });
 
 Route::prefix('forum') ->group(function() {
-    Route::post('/',[ForumCommentController::class, 'commentForum']);
+    Route::post('/post',[ForumCommentController::class, 'commentForum']);
     Route::post('/get-comment',[ForumCommentController::class, 'getCommentsForRecipe']);
     Route::post('/like-dislike',[ForumCommentController::class, 'likeDislikeForum']);
 });

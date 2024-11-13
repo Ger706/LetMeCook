@@ -171,7 +171,19 @@ class RecipeController extends ResponseController
         }
         return $this->sendResponseData($results);
     }
+    public function deleteRecipe($recipeId) {
+        try {
+            $recipe = Recipe::find($recipeId);
+            if (!$recipe) {
+                return $this->sendError('Recipe not found');
+            }
+            $recipe->delete();
 
+        } catch (Exception $e) {
+            return $this->sendError('Failed to delete recipe');
+        }
+        return $this->sendSuccess('Recipe successfully deleted');
+    }
     public function getRecipesByUser($userId) {
         try {
             $result = Recipe::where('user_id', $userId)->get()->toArray();

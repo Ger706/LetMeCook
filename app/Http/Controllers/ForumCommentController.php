@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ForumComment;
+use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Mockery\Exception;
@@ -17,15 +18,17 @@ class ForumCommentController extends ResponseController
                 ->select(
                     'forum_comment.forum_comment_id',
                 'forum_comment.likes',
-                DB::RAW('COUNT(forum_comment.likes) as like_amount'),
+                    DB::raw("SUM(JSON_LENGTH(forum_comment.likes)) as like_amount"),
                 'forum_comment.comment',
                 'forum_comment.user_id',
-                'users.username')
+                'users.username',
+                'users.is_expert')
                 ->groupBy('forum_comment.forum_comment_id',
                 'forum_comment.likes',
                 'forum_comment.comment',
                 'forum_comment.user_id',
-                'users.username')
+                'users.username',
+                'users.is_expert')
                 ->where('forum_comment.recipe_id', '=', $data['recipe_id'])->get()->toArray();
 
             if (!$result) {
@@ -51,10 +54,9 @@ class ForumCommentController extends ResponseController
     public function commentForum(Request $request) {
         try {
             $data = $request->all();
-
             $forumComment = new ForumComment();
             $forumComment->fill($data);
-            $forumComment->likes = [];
+            $forumComment->likes = "[]";
             $forumComment->save();
 
         } catch (Exception $e) {
