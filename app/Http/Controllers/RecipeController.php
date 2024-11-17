@@ -177,7 +177,8 @@ class RecipeController extends ResponseController
             if (!$recipe) {
                 return $this->sendError('Recipe not found');
             }
-            $recipe->delete();
+            $recipe->deleted_at = now();
+            $recipe->update();
 
         } catch (Exception $e) {
             return $this->sendError('Failed to delete recipe');
@@ -186,7 +187,7 @@ class RecipeController extends ResponseController
     }
     public function getRecipesByUser($userId) {
         try {
-            $result = Recipe::where('user_id', $userId)->get()->toArray();
+            $result = Recipe::where('user_id', $userId)->whereNull('deleted_at')->get()->toArray();
             if (!$result) {
                 return $this->sendError('Recipe List not found');
             }
