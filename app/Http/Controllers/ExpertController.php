@@ -37,6 +37,21 @@ class ExpertController extends ResponseController
         return $this->sendResponseData($results);
     }
 
+    public function getFeaturedExperts() {
+        try{
+            $results = Expert::whereNull('deleted_at')->first();
+            if (!$results) {
+                return $this->sendError('There Is No Expert');
+            }
+
+                $results['specialization'] = json_decode($results['specialization']);
+
+        } catch (Exception $e) {
+            return $this->sendError('Failed to get Expert');
+        }
+    return $this->sendResponseData($results);
+    }
+
     public function getExpertDetail($expertId) {
         try {
             $result = Expert::find($expertId);

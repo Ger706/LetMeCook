@@ -46,6 +46,7 @@ Route::prefix('forum') ->group(function() {
 
 Route::prefix('expert')->group(function () {
     Route::post('/create', [ExpertController::class, 'createExpert']);
-    Route::get('/{expertId}', [ExpertController::class, 'getExpertDetail']);
-    Route::post('/get-all', [ExpertController::class, 'getAllExperts']);
+    Route::get('/detail/{expertId}', [ExpertController::class, 'getExpertDetail']);
+    Route::get('/get-featured',[ExpertController::class, 'getFeaturedExperts']);
+    Route::get('/get-all', [ExpertController::class, 'getAllExperts']);
 });

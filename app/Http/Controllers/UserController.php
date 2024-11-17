@@ -85,7 +85,7 @@ class UserController extends ResponseController
             if (!$user){
                 return $this->sendError("User not found");
             }
-            $user->premium = true;
+            $user->is_premium = 1;
             $user->save();
         } catch (Exception $e) {
             return $this->sendError('Failed to set premium user');

@@ -24,7 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'allergens',
-        'premium'
+        'is_premium'
     ];
 
     /**
